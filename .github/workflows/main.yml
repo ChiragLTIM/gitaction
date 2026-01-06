@@ -2,7 +2,7 @@ name: Build & Push Netflix Image to ECR
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 env:

@@ -1,0 +1,38 @@
+name: Build & Push Netflix Image to ECR
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: "public.ecr.aws/i4r6h9x3/netflix"
+  IMAGE_TAG: "${{ github.run_number }}"
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Amazon ECR
+        run: |
+          set -e
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i4r6h9x3
+
+      - name: Build Docker Image
+        run: |
+          docker build --no-cache -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
+
+      - name: Push Image to ECR
+        run: |
+          docker push "${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+      - name: Pull and run
+        run: |
+          docker ps -aq -f name=demo | xargs -r docker stop
+          docker run --rm -dit --name demo --publish 8000:80 "${ECR_REPOSITORY}:${IMAGE_TAG}"
+
